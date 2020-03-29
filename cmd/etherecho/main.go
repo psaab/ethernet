@@ -12,7 +12,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/mdlayher/ethernet"
+	"github.com/psaab/ethernet"
 	"github.com/mdlayher/raw"
 )
 
