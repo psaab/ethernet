@@ -18,15 +18,28 @@ import (
 
 // Make use of an unassigned EtherType for etherecho.
 // https://www.iana.org/assignments/ieee-802-numbers/ieee-802-numbers.xhtml
-const etherType = 0xcccc
+var (
+	etherType uint16
+	destinationHardwareAddr net.HardwareAddr
+)
+
 
 func main() {
 	var (
 		ifaceFlag = flag.String("i", "", "network interface to use to send and receive messages")
 		msgFlag   = flag.String("m", "", "message to be sent (default: system's hostname)")
+		destFlag  = flag.String("d", "ff:ff:ff:ff:ff:ff", "destination mac address")
+		typeFlag  = flag.Int("t", 0xcccc, "ethernet type")
 	)
 
 	flag.Parse()
+	if d, err := net.ParseMAC(*destFlag); err == nil {
+		destinationHardwareAddr = d
+	} else {
+		log.Fatalf("Could not prase mac address %s: %v", *destFlag, err)
+	}
+
+	etherType = uint16(*typeFlag)
 
 	// Open a raw socket on the specified interface, and configure it to accept
 	// traffic with etherecho's EtherType.
@@ -62,9 +75,9 @@ func main() {
 func sendMessages(c net.PacketConn, source net.HardwareAddr, msg string) {
 	// Message is broadcast to all machines in same network segment.
 	f := &ethernet.Frame{
-		Destination: ethernet.Broadcast,
+		Destination: destinationHardwareAddr,
 		Source:      source,
-		EtherType:   etherType,
+		EtherType:   ethernet.EtherType(etherType),
 		Payload:     []byte(msg),
 	}
 
